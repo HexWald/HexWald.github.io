@@ -1,38 +1,41 @@
-# HexWald portfolio
+# HexWald
 
-Single-page portfolio. Static HTML/CSS/JavaScript. No build step, external fonts, cookies, analytics or third-party runtime dependencies.
+My portfolio: [hexwald.github.io](https://hexwald.github.io/).
 
-## Local preview
+Static HTML, CSS and JavaScript. No build step. Fonts are served locally.
 
-Open `index.html` in a browser, or run:
+## Run locally
 
-```shell
+```sh
 python -m http.server 8000
 ```
 
-Then visit http://localhost:8000.
+Open `http://localhost:8000`. Opening `index.html` directly also works, although browser clipboard access may be limited.
 
-## Content and privacy
+## Edit
 
-- Project names, descriptions, links and technology lists: `content.js`.
-- Main page, contact links and metadata: `index.html`.
-- Layout, type and mobile styles: `styles.css`.
-- Language switch and project details: `app.js`.
-- No name, location, age, school or email address is included.
+- `index.html`: page structure, project links and Russian fallback text.
+- `content.js`: Russian and English copy, project details.
+- `styles.css`: layout, typography and animations.
+- `app.js`: previews, language preference, navigation and dialogs.
+- `assets/scene.svg`: the block scene used in Cacao previews.
 
-Project summaries are a first draft based on public work and the Telegram project feed. Please review them before publishing, especially the private Sketch Projects entry. No employment history or years of experience are claimed.
+The previews use sample data and run locally in the browser. They do not scan servers, read Kwork or send Telegram messages. Source links point to the actual projects.
 
-## Publish on GitHub Pages
+The page respects reduced motion. Project descriptions and source links remain available without JavaScript. Only the language preference is stored in localStorage.
 
-1. Create a **public** repository named `HexWald.github.io` under the `HexWald` GitHub account.
-2. **Unzip** the archive and open its extracted folder.
-3. Upload `index.html`, `styles.css`, `content.js`, `app.js`, `favicon.svg`, `.nojekyll` to the repository root. `README.md` is optional. **Do not upload the ZIP** or the containing folder as a folder. The file `index.html` must be at the top level.
-4. Commit to the `main` branch.
-5. Settings > Pages > Build and deployment > Deploy from a branch > `main` / `(root)` > Save.
-6. After deployment completes, open https://hexwald.github.io/.
+## Checks
 
-All 6 site files are necessary/recommended. If your computer hides `.nojekyll`, GitHub Pages normally still handles these files, but uploading it avoids Jekyll processing.
+```sh
+pnpm install --frozen-lockfile
+pnpm exec playwright install chromium
+pnpm test
+```
 
-## Note
+The check starts its own local server and tests the previews, both languages, keyboard navigation, mobile layout and reduced motion. Screenshots are saved under `build/`, which is ignored by Git.
 
-This is an independently built portfolio in the user's requested minimal style, not the source code of a third-party reference project.
+GitHub Pages publishes the root of `main`.
+
+## Fonts
+
+Golos Text and Unbounded use the SIL Open Font License. License files are included in `assets/fonts`.
