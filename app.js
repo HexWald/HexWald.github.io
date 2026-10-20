@@ -27,6 +27,7 @@
     $('#language-button').textContent = language === 'ru' ? 'EN' : 'RU';
     $('#language-button').setAttribute('aria-label', language === 'ru' ? 'Switch to English' : 'Переключить на русский');
     demos.refresh();
+    particles.refresh();
     if (activeCase) renderCase(activeCase);
   }
   function changeLanguage() {
@@ -138,6 +139,7 @@
   $('[data-change-language]').addEventListener('click', () => { changeLanguage(); commandDialog.close(); });
 
   const demos = window.initDemos({ t: copy, copyText });
+  const particles = window.initParticles({ t: copy });
   translate();
   document.documentElement.classList.add('enhanced');
 })();

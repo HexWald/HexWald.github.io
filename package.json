@@ -2,7 +2,8 @@
   "name": "hexwald-portfolio",
   "private": true,
   "scripts": {
-    "test": "node scripts/check-site.cjs"
+    "test": "node --test scripts/check-particles.cjs && node scripts/check-site.cjs",
+    "check:performance": "node scripts/check-site.cjs --performance-only"
   },
   "devDependencies": {
     "playwright": "1.62.1"

@@ -12,7 +12,7 @@ const server = http.createServer(async (request, response) => {
     let pathname = decodeURIComponent(new URL(request.url, 'http://localhost').pathname);
     if (pathname === '/') pathname = '/index.html';
     const file = path.resolve(root, `.${pathname}`);
-    if (!file.startsWith(root + path.sep) || !/^\/(index\.html|styles\.css|content\.js|demo-data\.js|demos\.js|app\.js|favicon\.svg|assets\/.*)$/.test(pathname)) {
+    if (!file.startsWith(root + path.sep) || !/^\/(index\.html|styles\.css|content\.js|demo-data\.js|demos\.js|particles\.js|app\.js|favicon\.svg|assets\/.*)$/.test(pathname)) {
       response.writeHead(404).end();
       return;
     }
@@ -35,7 +35,19 @@ async function run() {
   function check(condition, message) { assert.ok(condition, message); checks++; }
   try {
     browser = await chromium.launch();
+    if (process.argv.includes('--performance-only')) {
+      await require('./measure-particles.cjs')(browser, origin, output);
+      return;
+    }
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, locale: 'ru-RU', reducedMotion: 'reduce' });
+    await context.addInitScript(() => {
+      window.particleFrames = 0;
+      const fill = CanvasRenderingContext2D.prototype.fill;
+      CanvasRenderingContext2D.prototype.fill = function (...args) {
+        if (this.canvas.id === 'particle-field') window.particleFrames++;
+        return fill.apply(this, args);
+      };
+    });
     await context.route('**/*', route => {
       if (route.request().url().startsWith(origin)) return route.continue();
       externalRequests.push(route.request().url());
@@ -52,6 +64,30 @@ async function run() {
     check(await page.locator('html.enhanced').count() === 1, 'Application initializes');
     check(await page.locator('#hero-title').innerText() === 'HexWald', 'Page heading');
     check(await page.locator('.project-card').count() === 4, 'Four source projects');
+    check(await page.evaluate(() => getComputedStyle(document.body).backgroundColor === 'rgb(8, 8, 8)'), 'Black theme');
+    check(await page.locator('#motion-toggle').isHidden(), 'Motion control hidden for reduced motion');
+    const quiet = await page.evaluate(() => window.particleFrames);
+    await page.waitForTimeout(150);
+    check(await page.evaluate(() => window.particleFrames) === quiet, 'Reduced motion keeps a still background');
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    await page.waitForFunction(before => window.particleFrames > before + 2, quiet);
+    check(await page.locator('#motion-toggle').isVisible(), 'Background animation starts when allowed');
+    await page.locator('#motion-toggle').click();
+    const paused = await page.evaluate(() => window.particleFrames);
+    await page.waitForTimeout(150);
+    check(await page.evaluate(() => window.particleFrames) === paused, 'Pause stops drawing');
+    await page.reload();
+    check(await page.locator('#motion-toggle').getAttribute('aria-pressed') === 'true', 'Pause persists after reload');
+    await page.locator('#motion-toggle').click();
+    await page.locator('#demos').scrollIntoViewIfNeeded();
+    await page.waitForTimeout(100);
+    const offscreen = await page.evaluate(() => window.particleFrames);
+    await page.waitForTimeout(150);
+    check(await page.evaluate(() => window.particleFrames) === offscreen, 'No background drawing off screen');
+    await page.evaluate(() => scrollTo(0, 0));
+    await page.waitForFunction(before => window.particleFrames > before, offscreen);
+    check(await page.locator('#particle-field').evaluate(canvas => canvas.width * canvas.height <= 1500000), 'Canvas buffer stays bounded');
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     check(await page.evaluate(() => {
       const ru = Object.keys(COPY.ru).sort();
       const en = Object.keys(COPY.en).sort();
@@ -267,7 +303,7 @@ async function run() {
     await social.setViewportSize({ width: 1200, height: 630 });
     await social.goto(origin);
     await social.evaluate(() => document.fonts.ready);
-    await social.addStyleTag({ content: '#demos, #details, #contact, .site-footer, .project-tech, .project-links { display: none; } .hero { padding-block: 24px; } .project-section { padding-top: 10px; } .project-card { grid-template-columns: 220px 1fr; padding-block: 12px; } .project-card h3 { font-size: 16px; } .project-card p { font-size: 13px; } .section-heading { margin-bottom: 14px; }' });
+    await social.addStyleTag({ content: '#projects, #demos, #details, #contact, .site-footer, .hero-bottom { display: none; } .hero { height: 558px; min-height: 558px; } .hero-content { padding-block: 40px; }' });
     await social.screenshot({ path: path.join(output, 'social.jpg'), quality: 86 });
 
     const noScriptContext = await browser.newContext({ javaScriptEnabled: false });
